@@ -14,6 +14,7 @@ public class OpenXRExtended : ModuleRules
 			"Engine",
 			"Slate",
 			"SlateCore",
+			"XRRefreshRate"
 		]);
 	}
 }

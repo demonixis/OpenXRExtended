@@ -1,5 +1,6 @@
-// XRQuickLibrary.cpp
+// OpenXRExtendedLibrary.cpp
 #include "OpenXRExtendedLibrary.h"
+#include "XRRefreshRateBPLibrary.h"
 #include "HAL/IConsoleManager.h"
 
 static IConsoleVariable* FindCVar(const TCHAR* Name)
@@ -53,8 +54,8 @@ void UOpenXRExtendedLibrary::SetPassthroughEnabled(const bool bEnable, const boo
 	// 3 = AlphaBlend, 1 = Opaque
 	SetCVarInt(TEXT("xr.OpenXREnvironmentBlendMode"),
 	           bEnable
-		           ? (int32)EXREnvironmentBlendMode::AlphaBlend
-		           : (int32)EXREnvironmentBlendMode::Opaque);
+		           ? static_cast<int32>(EXREnvironmentBlendMode::AlphaBlend)
+		           : static_cast<int32>(EXREnvironmentBlendMode::Opaque));
 
 	if (bAlsoSetStartupCVars)
 	{
@@ -75,7 +76,7 @@ void UOpenXRExtendedLibrary::SetPassthroughEnabled(const bool bEnable, const boo
 
 void UOpenXRExtendedLibrary::SetVRSFoveation(EXRFoveationLevel Level, const bool bGazeTracked, const bool bPreviewMask)
 {
-	SetCVarInt(TEXT("xr.VRS.FoveationLevel"), (int32)Level);
+	SetCVarInt(TEXT("xr.VRS.FoveationLevel"), static_cast<int32>(Level));
 	SetCVarBool(TEXT("xr.VRS.GazeTrackedFoveation"), bGazeTracked);
 	SetCVarBool(TEXT("xr.VRS.FoveationPreview"), bPreviewMask);
 }
@@ -101,15 +102,49 @@ void UOpenXRExtendedLibrary::SetXRRenderTargetScalePercent(int32 Percent)
 	}
 }
 
-void UOpenXRExtendedLibrary::SetXRDynamicResolutionEnabled(const bool bEnable)
+void UOpenXRExtendedLibrary::SetXRDynamicResolutionEnabled(const bool bEnable, const float Min, const float Max,
+                                                           const float RefreshRateHz)
 {
+	SetXRDynamicResolutionExtEnabled(bEnable, Min * 100, Max * 100, 1000 / RefreshRateHz, true);
+}
+
+void UOpenXRExtendedLibrary::SetXRDynamicResolutionExtEnabled(const bool bEnable, int32 MinPercent, int32 MaxPercent,
+                                                              const float FrameTimeBudgetMs, const bool bAutoMode)
+{
+	MinPercent = FMath::Clamp(MinPercent, 10, 200);
+	MaxPercent = FMath::Clamp(MaxPercent, MinPercent, 300);
+
+	if (CVarExists(TEXT("r.DynamicRes.MinScreenPercentage")))
+	{
+		SetCVarInt(TEXT("r.DynamicRes.MinScreenPercentage"), MinPercent);
+	}
+
+	if (CVarExists(TEXT("r.DynamicRes.MaxScreenPercentage")))
+	{
+		SetCVarInt(TEXT("r.DynamicRes.MaxScreenPercentage"), MaxPercent);
+	}
+
+	if (CVarExists(TEXT("r.DynamicRes.FrameTimeBudget")))
+	{
+		SetCVarFloat(TEXT("r.DynamicRes.FrameTimeBudget"), FrameTimeBudgetMs);
+	}
+
+	// 2 = Auto, 1 = Manual, 0 = Off
+	if (CVarExists(TEXT("r.DynamicRes.OperationMode")))
+	{
+		if (!bEnable) SetCVarInt(TEXT("r.DynamicRes.OperationMode"), 0);
+		else SetCVarInt(TEXT("r.DynamicRes.OperationMode"), bAutoMode ? 2 : 1);
+	}
+
+	// Starting 5.7, without Post Processing ;)
 	if (CVarExists(TEXT("xr.MobileLDRDynamicResolution")))
 	{
 		SetCVarBool(TEXT("xr.MobileLDRDynamicResolution"), bEnable);
 	}
-	else
+
+	if (bEnable && CVarExists(TEXT("xr.SecondaryScreenPercentage.HMDRenderTarget")))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[XRQuick] xr.MobileLDRDynamicResolution not found (device/runtime dependent)."));
+		SetCVarInt(TEXT("xr.SecondaryScreenPercentage.HMDRenderTarget"), FMath::Clamp(MaxPercent, 50, 200));
 	}
 }
 
@@ -161,11 +196,14 @@ void UOpenXRExtendedLibrary::SetAlphaInvertPassEnabled(const bool bEnable)
 	}
 }
 
-bool UOpenXRExtendedLibrary::SetHMDRefreshRateHz(float Hz)
+bool UOpenXRExtendedLibrary::SetHMDRefreshRateHz(const float Hz)
 {
-	UE_LOG(LogTemp, Warning,
-	       TEXT(
-		       "[XRQuick] Changing refresh rate requires a runtime extension (e.g., XR_FB_display_refresh_rate). Not available in vanilla UE OpenXR."
-	       ));
-	return false;
+	const bool bResult = UXRRefreshRateBPLibrary::XR_SetRefreshRate(Hz);
+
+	if (!bResult)
+	{
+		UE_LOG(LogTemp, Warning, TEXT( "[UOpenXRExtendedLibrary] Wasn't able to change the refresh rate." ));
+	}
+
+	return bResult;
 }

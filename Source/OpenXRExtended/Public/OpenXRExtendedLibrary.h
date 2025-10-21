@@ -8,19 +8,19 @@
 UENUM(BlueprintType)
 enum class EXREnvironmentBlendMode : uint8
 {
-	None       UMETA(DisplayName="(None/Auto)", Hidden),
-	Opaque     = 1 UMETA(DisplayName="Opaque"),
-	Additive   = 2 UMETA(DisplayName="Additive"),
+	None UMETA(DisplayName="(None/Auto)", Hidden),
+	Opaque = 1 UMETA(DisplayName="Opaque"),
+	Additive = 2 UMETA(DisplayName="Additive"),
 	AlphaBlend = 3 UMETA(DisplayName="Alpha Blend / Passthrough")
 };
 
 UENUM(BlueprintType)
 enum class EXRFoveationLevel : uint8
 {
-	Off   = 0 UMETA(DisplayName="Off"),
-	Low   = 1 UMETA(DisplayName="Low"),
-	Medium= 2 UMETA(DisplayName="Medium"),
-	High  = 3 UMETA(DisplayName="High")
+	Off = 0 UMETA(DisplayName="Off"),
+	Low = 1 UMETA(DisplayName="Low"),
+	Medium = 2 UMETA(DisplayName="Medium"),
+	High = 3 UMETA(DisplayName="High")
 };
 
 UCLASS()
@@ -34,13 +34,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
 	static void SetPassthroughEnabled(bool bEnable, bool bAlsoSetStartupCVars = true);
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
-	static void SetVRSFoveation(EXRFoveationLevel Level, bool bGazeTracked=false, bool bPreviewMask=false);
+	static void SetVRSFoveation(EXRFoveationLevel Level, bool bGazeTracked = false, bool bPreviewMask = false);
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
-	static void SetFBFoveation(EXRFoveationLevel Level, bool bDynamic=false, float VerticalOffsetDeg=0.f);
+	static void SetFBFoveation(EXRFoveationLevel Level, bool bDynamic = false, float VerticalOffsetDeg = 0.f);
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
 	static void SetXRRenderTargetScalePercent(int32 Percent);
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
-	static void SetXRDynamicResolutionEnabled(bool bEnable);
+	static void SetXRDynamicResolutionEnabled(bool bEnable, float Min, float Max, float RefreshRateHz);
+	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
+	static void SetXRDynamicResolutionExtEnabled(bool bEnable, int32 MinPercent, int32 MaxPercent,
+	                                          const float FrameTimeBudgetMs, const bool bAutoMode);
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
 	static void SetStereoLayerEmulationEnabled(bool bEnable);
 	UFUNCTION(BlueprintCallable, Category="XR|OpenXR")
@@ -55,9 +58,9 @@ public:
 	static bool SetHMDRefreshRateHz(float Hz);
 
 private:
-	static bool  CVarExists(const TCHAR* Name);
-	static void  SetCVarBool (const TCHAR* Name, bool bValue);
-	static void  SetCVarInt  (const TCHAR* Name, int32 Value);
-	static void  SetCVarFloat(const TCHAR* Name, float Value);
-	static bool  IsMobile();
+	static bool CVarExists(const TCHAR* Name);
+	static void SetCVarBool(const TCHAR* Name, bool bValue);
+	static void SetCVarInt(const TCHAR* Name, int32 Value);
+	static void SetCVarFloat(const TCHAR* Name, float Value);
+	static bool IsMobile();
 };
