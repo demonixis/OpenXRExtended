@@ -17,4 +17,4 @@ void FOpenXRExtendedModule::ShutdownModule()
 
 #undef LOCTEXT_NAMESPACE
 	
-IMPLEMENT_MODULE(FOpenXRExtendedModule, OpenXRUtils)
+IMPLEMENT_MODULE(FOpenXRExtendedModule, OpenXRExtended)
